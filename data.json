@@ -11,6 +11,18 @@
             "name": "Rishabh Verma",
             "encoding": [],
             "created_at": "2026-01-30 18:16:22.055557"
+        },
+        {
+            "id": 3,
+            "name": "Rishabh",
+            "encoding": [],
+            "created_at": "2026-01-30 18:39:53.457223"
+        },
+        {
+            "id": 4,
+            "name": "rishi",
+            "encoding": [],
+            "created_at": "2026-01-30 18:40:20.531586"
         }
     ],
     "history": [
@@ -31,6 +43,12 @@
             "name": "Rishabh Verma",
             "type": "IN",
             "timestamp": "2026-01-30 18:16:32.227379"
+        },
+        {
+            "user_id": "1",
+            "name": "Aastha Singh",
+            "type": "IN",
+            "timestamp": "2026-01-30 18:38:07.636907"
         }
     ]
 }
