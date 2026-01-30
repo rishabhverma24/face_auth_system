@@ -19,21 +19,21 @@ The system follows a standard Client-Server architecture. The Client (Browser) c
 
 ```mermaid
 graph TD
-    User[User] -->|Interacts with| UI["Web Interface (HTML/JS)"]
-    UI -->|Captures Video Frames| Camera[Webcam]
-    UI -->|Sends Batch of Images| API[FastAPI Backend]
+    User -->|Interacts with| WebUI[Web Interface]
+    WebUI -->|Captures Video| Camera
+    WebUI -->|Sends Batch| API[FastAPI Backend]
     
-    subgraph "Backend Processing"
-        API -->|1. Check Liveness| Liveness["Liveness Detector (MediaPipe)"]
-        Liveness -->|Pass (Blink Detected)| Recog["Face Recognizer (OpenCV LBPH)"]
-        Liveness -->|Fail (Static/No Face)| Reject[Reject Request]
+    subgraph Backend_Processing
+        API -->|Check Liveness| Liveness[Liveness Detector]
+        Liveness -->|Pass| Recog[Face Recognizer]
+        Liveness -->|Fail| Reject[Reject Request]
         
-        Recog -->|Match Found| DB["Database (JSON)"]
+        Recog -->|Match Found| DB[Database]
         Recog -->|No Match| Reject
     end
     
     DB -->|Log Attendance| API
-    API -->|Return Status| UI
+    API -->|Return Status| WebUI
 ```
 
 ---
