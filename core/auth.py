@@ -111,18 +111,23 @@ class FaceAuthSystem:
 
         # Analysis
         if not valid_frames:
+             print("[Liveness] No face detected in any frame.")
              return {"is_live": False, "reason": "No face detected in any frame"}
 
         ears = [e for e in ear_history if e is not None]
         if not ears:
+             print("[Liveness] No EAR calculated.")
              return {"is_live": False, "reason": "No face detected"}
 
         min_ear = min(ears)
         max_ear = max(ears)
         
-        # Blink thresholds
-        CLOSED_THRESH = 0.18  # Eyes considered closed
-        OPEN_THRESH = 0.22    # Eyes considered open
+        print(f"[Liveness] Min EAR: {min_ear:.3f}, Max EAR: {max_ear:.3f}")
+        
+        # Blink thresholds (Relaxed slightly)
+        CLOSED_THRESH = 0.21  # Was 0.18 (Easier to detect closed/blink)
+        OPEN_THRESH = 0.23    # Was 0.22 (Requires slightly more open - no, wait, keep it reasonable)
+        # Actually, let's keep OPEN_THRESH reasonable. 0.23 is fine.
         
         has_closed = min_ear < CLOSED_THRESH
         has_open = max_ear > OPEN_THRESH
@@ -130,15 +135,18 @@ class FaceAuthSystem:
         if has_closed and has_open:
             # Find best frame (max EAR) to use for recognition
             best_frame_tuple = max(valid_frames, key=lambda x: x[0])
+            print("[Liveness] Blink Detected! PASS.")
             return {
                 "is_live": True, 
                 "reason": "Blink Detected", 
                 "best_image": best_frame_tuple[1]
             }
         else:
+            reason = f"Liveness Failed. Min: {min_ear:.2f} (Need < {CLOSED_THRESH}), Max: {max_ear:.2f} (Need > {OPEN_THRESH})"
+            print(f"[Liveness] {reason}")
             return {
                 "is_live": False, 
-                "reason": f"No Blink Detected. (Min EAR: {min_ear:.2f}, Max EAR: {max_ear:.2f})"
+                "reason": "Blink not detected. Ensure you blink naturally."
             }
 
     def train_model(self):

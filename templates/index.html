@@ -85,7 +85,9 @@
       if (data.success) {
         showMessage(`✅ ${data.message}`, "success");
       } else {
-        showMessage(`❌ ${data.message}`, "error");
+        // Handle various error formats
+        const msg = data.message || data.detail || JSON.stringify(data);
+        showMessage(`❌ ${msg}`, "error");
       }
     } catch (e) {
       showMessage("Network Error", "error");
