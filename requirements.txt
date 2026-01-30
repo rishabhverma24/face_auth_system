@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+opencv-contrib-python
+mediapipe
+numpy
+pybase64
+python-multipart
+cmake

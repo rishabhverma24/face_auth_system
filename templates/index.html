@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="text-align: center; margin-bottom: 2rem;">
+    <h1>Face Attendance</h1>
+    <p style="color: var(--text-muted);">Secure Face Authentication System</p>
+</div>
+
+<div class="glass-card" style="max-width: 800px; margin: 0 auto;">
+    <div class="video-wrapper">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div class="overlay">
+            <div id="cam-dot" class="status-dot"></div>
+            <span id="cam-status">Initializing...</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;">
+        <button id="btn-in" class="btn btn-primary" style="background-color: var(--accent);">
+            Punch IN
+        </button>
+        <button id="btn-out" class="btn btn-primary" style="background-color: var(--error);">
+            Punch OUT
+        </button>
+    </div>
+
+    <div id="message" style="margin-top: 1.5rem; text-align: center; font-size: 1.1rem; min-height: 1.5em;"></div>
+</div>
+
+<script>
+    document.getElementById('nav-home').classList.add('active');
+    
+    window.addEventListener('load', () => {
+        startCamera();
+    });
+
+    document.getElementById('btn-in').addEventListener('click', () => performPunch('IN'));
+    document.getElementById('btn-out').addEventListener('click', () => performPunch('OUT'));
+
+    async function performPunch(type) {
+        const image = captureImage();
+        if (!image) return;
+
+        showMessage(`Punching ${type}...`, 'info');
+        
+        const formData = new FormData();
+        formData.append('image', image);
+        formData.append('type', type);
+
+        try {
+            const res = await fetch('/api/identify', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                showMessage(`✅ ${data.message}`, 'success');
+            } else {
+                showMessage(`❌ ${data.message}`, 'error');
+            }
+        } catch (e) {
+            showMessage("Network Error", "error");
+        }
+    }
+</script>
+{% endblock %}

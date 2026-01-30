@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="glass-card" style="max-width: 600px; margin: 0 auto;">
+    <h2>Register New User</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">We need to capture 10 photos used for training. Please move your head slightly while capturing.</p>
+
+    <div class="form-group">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" placeholder="Enter your name" required>
+    </div>
+
+    <div class="video-wrapper">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div class="overlay">
+            <div class="status-dot active"></div>
+            <span id="video-status">Camera Active</span>
+        </div>
+    </div>
+    
+    <!-- Progress Bar -->
+    <div style="margin-top: 1rem; background: rgba(255,255,255,0.1); border-radius: 4px; height: 8px; overflow: hidden; display: none;" id="progress-container">
+        <div id="progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+    </div>
+
+    <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center;">
+        <button id="capture-btn" class="btn btn-primary">Start Capture (10 Photos)</button>
+    </div>
+
+    <div id="message" style="margin-top: 1rem; text-align: center; min-height: 1.5rem;"></div>
+</div>
+
+<script>
+    document.getElementById('nav-register').classList.add('active');
+    
+    window.addEventListener('load', () => {
+        startCamera();
+    });
+
+    document.getElementById('capture-btn').addEventListener('click', async () => {
+        const name = document.getElementById('name').value;
+        if (!name) {
+            showMessage("Please enter your name first.", "error");
+            return;
+        }
+
+        const btn = document.getElementById('capture-btn');
+        btn.disabled = true;
+        btn.textContent = "Capturing...";
+        
+        document.getElementById('progress-container').style.display = 'block';
+        const progressBar = document.getElementById('progress-bar');
+        
+        const images = [];
+        const total = 10;
+        
+        for(let i=0; i<total; i++) {
+            showMessage(`Capturing ${i+1}/${total}...`, "info");
+            const img = captureImage();
+            if(img) images.push(img);
+            
+            progressBar.style.width = ((i+1)/total * 100) + '%';
+            
+            // Wait 200ms
+            await new Promise(r => setTimeout(r, 200));
+        }
+        
+        showMessage("Processing & Training Model...", "info");
+        btn.textContent = "Training...";
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('images', JSON.stringify(images));
+
+        try {
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                showMessage(`Success! ${data.faces_saved} faces used. Redirecting...`, "success");
+                setTimeout(() => window.location.href = '/', 2000);
+            } else {
+                showMessage("Error: " + data.message, "error");
+                btn.disabled = false;
+                btn.textContent = "Start Capture (10 Photos)";
+            }
+        } catch (e) {
+            showMessage("Network Error", "error");
+            btn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

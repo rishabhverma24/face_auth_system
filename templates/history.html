@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2>Attendance History</h2>
+        <button onclick="loadHistory()" class="btn btn-secondary">Refresh</button>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody id="history-body">
+                <tr><td colspan="4" style="text-align:center;">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.getElementById('nav-history').classList.add('active');
+    
+    window.addEventListener('load', loadHistory);
+
+    async function loadHistory() {
+        try {
+            const res = await fetch('/api/history');
+            const data = await res.json();
+            const tbody = document.getElementById('history-body');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No records found</td></tr>';
+                return;
+            }
+
+            // Sort by time desc
+            data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                const date = new Date(row.timestamp).toLocaleString();
+                const badgeClass = row.type === 'IN' ? 'badge-in' : 'badge-out';
+                
+                tr.innerHTML = `
+                    <td>${date}</td>
+                    <td><strong>${row.name}</strong></td>
+                    <td><span class="badge ${badgeClass}">${row.type}</span></td>
+                    <td style="color: var(--text-muted); font-family: monospace;">${row.user_id}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {
+            console.error(e);
+            document.getElementById('history-body').innerHTML = '<tr><td colspan="4" style="text-align:center;">Error loading history</td></tr>';
+        }
+    }
+</script>
+{% endblock %}
