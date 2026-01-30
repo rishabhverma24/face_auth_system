@@ -61,19 +61,35 @@ async def register(name: str = Form(...), images: str = Form(...)):
         return JSONResponse(content={"success": False, "message": str(e)}, status_code=500)
 
 @app.post("/api/identify")
-async def identify(image: str = Form(...), type: str = Form(...)):
+async def identify(images: str = Form(...), type: str = Form(...)):
     try:
-        img = read_image_from_base64(image)
-        if img is None:
-             return JSONResponse(content={"success": False, "message": "Invalid image data"}, status_code=400)
+        # Decode list of images
+        try:
+            image_list_b64 = json.loads(images)
+        except json.JSONDecodeError:
+            # Fallback for legacy single image calls (if any)
+            image_list_b64 = [images]
 
-        # 1. Check Liveness
-        liveness = auth_system.check_liveness(img)
+        cv_images = []
+        for b64 in image_list_b64:
+            img = read_image_from_base64(b64)
+            if img is not None:
+                cv_images.append(img)
+        
+        if not cv_images:
+             return JSONResponse(content={"success": False, "message": "No valid images received"}, status_code=400)
+
+        # 1. Check Liveness (Blink Detection)
+        liveness = auth_system.check_liveness(cv_images)
+        
         if not liveness["is_live"]:
-             return JSONResponse(content={"success": False, "message": liveness["reason"] + ". Please blink/open eyes."}, status_code=400)
+             return JSONResponse(content={"success": False, "message": liveness["reason"] + ". Please look at the camera and blink naturally."}, status_code=400)
+        
+        # Use the best frame for recognition
+        best_img = liveness["best_image"]
              
         # 2. Identify
-        result = auth_system.identify_user(img)
+        result = auth_system.identify_user(best_img)
         if result["success"]:
             # 3. Log
             # Pass name from result, ID from result.

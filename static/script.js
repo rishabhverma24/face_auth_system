@@ -37,6 +37,16 @@ function captureImage() {
     return canvas.toDataURL('image/jpeg', 0.8);
 }
 
+async function captureBurst(count = 5, interval = 150) {
+    const images = [];
+    for (let i = 0; i < count; i++) {
+        const img = captureImage();
+        if (img) images.push(img);
+        await new Promise(r => setTimeout(r, interval));
+    }
+    return images;
+}
+
 function showMessage(msg, type) {
     const el = document.getElementById('message');
     el.textContent = msg;

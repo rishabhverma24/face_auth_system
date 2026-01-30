@@ -5,6 +5,12 @@
             "name": "Aastha Singh",
             "encoding": [],
             "created_at": "2026-01-30 17:25:18.336909"
+        },
+        {
+            "id": 2,
+            "name": "Rishabh Verma",
+            "encoding": [],
+            "created_at": "2026-01-30 18:16:22.055557"
         }
     ],
     "history": [
@@ -13,6 +19,18 @@
             "name": "Aastha Singh",
             "type": "IN",
             "timestamp": "2026-01-30 17:25:26.569223"
+        },
+        {
+            "user_id": "1",
+            "name": "Aastha Singh",
+            "type": "IN",
+            "timestamp": "2026-01-30 18:15:19.765491"
+        },
+        {
+            "user_id": "2",
+            "name": "Rishabh Verma",
+            "type": "IN",
+            "timestamp": "2026-01-30 18:16:32.227379"
         }
     ]
 }

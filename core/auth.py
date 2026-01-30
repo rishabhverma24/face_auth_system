@@ -70,46 +70,76 @@ class FaceAuthSystem:
         (x, y, w, h) = sorted(faces, key=lambda f: f[2]*f[3], reverse=True)[0]
         return gray[y:y+h, x:x+w]
 
-    def check_liveness(self, image_np: np.ndarray) -> Dict[str, Any]:
+    def check_liveness(self, images_np: List[np.ndarray]) -> Dict[str, Any]:
         """
-        Checks if eyes are open using MediaPipe.
+        Checks for liveness by detecting a blink across a sequence of frames.
+        Returns the best frame (most open eyes) if live.
         """
-        rgb_img = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
-        
-        # Create MediaPipe Image
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_img)
-        
-        # Detect
-        detection_result = self.landmarker.detect(mp_image)
+        ear_history = []
+        valid_frames = []
 
-        if not detection_result.face_landmarks:
-            return {"is_live": False, "reason": "No face detected"}
+        for img in images_np:
+            rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_img)
+            detection_result = self.landmarker.detect(mp_image)
 
-        face_landmarks = detection_result.face_landmarks[0]
-        
-        # EAR calculation
-        def eye_aspect_ratio(indices):
-            p1 = np.array([face_landmarks[indices[0]].x, face_landmarks[indices[0]].y])
-            p2 = np.array([face_landmarks[indices[1]].x, face_landmarks[indices[1]].y])
-            p3 = np.array([face_landmarks[indices[2]].x, face_landmarks[indices[2]].y])
-            p4 = np.array([face_landmarks[indices[3]].x, face_landmarks[indices[3]].y])
-            p5 = np.array([face_landmarks[indices[4]].x, face_landmarks[indices[4]].y])
-            p6 = np.array([face_landmarks[indices[5]].x, face_landmarks[indices[5]].y])
-            A = np.linalg.norm(p2 - p6)
-            B = np.linalg.norm(p3 - p5)
-            C = np.linalg.norm(p1 - p4)
-            return (A + B) / (2.0 * C)
+            if not detection_result.face_landmarks:
+                ear_history.append(None)
+                continue
 
-        left_ear = eye_aspect_ratio([362, 385, 387, 263, 373, 380])
-        right_ear = eye_aspect_ratio([33, 160, 158, 133, 153, 144])
-        avg_ear = (left_ear + right_ear) / 2.0
+            face_landmarks = detection_result.face_landmarks[0]
+
+            # EAR calculation
+            def eye_aspect_ratio(indices):
+                p1 = np.array([face_landmarks[indices[0]].x, face_landmarks[indices[0]].y])
+                p2 = np.array([face_landmarks[indices[1]].x, face_landmarks[indices[1]].y])
+                p3 = np.array([face_landmarks[indices[2]].x, face_landmarks[indices[2]].y])
+                p4 = np.array([face_landmarks[indices[3]].x, face_landmarks[indices[3]].y])
+                p5 = np.array([face_landmarks[indices[4]].x, face_landmarks[indices[4]].y])
+                p6 = np.array([face_landmarks[indices[5]].x, face_landmarks[indices[5]].y])
+                A = np.linalg.norm(p2 - p6)
+                B = np.linalg.norm(p3 - p5)
+                C = np.linalg.norm(p1 - p4)
+                return (A + B) / (2.0 * C)
+
+            left_ear = eye_aspect_ratio([362, 385, 387, 263, 373, 380])
+            right_ear = eye_aspect_ratio([33, 160, 158, 133, 153, 144])
+            avg_ear = (left_ear + right_ear) / 2.0
+            
+            ear_history.append(avg_ear)
+            valid_frames.append((avg_ear, img))
+
+        # Analysis
+        if not valid_frames:
+             return {"is_live": False, "reason": "No face detected in any frame"}
+
+        ears = [e for e in ear_history if e is not None]
+        if not ears:
+             return {"is_live": False, "reason": "No face detected"}
+
+        min_ear = min(ears)
+        max_ear = max(ears)
         
-        is_eyes_open = avg_ear > 0.2
-        return {
-            "is_live": is_eyes_open, 
-            "ear": avg_ear,
-            "reason": "Eyes closed" if not is_eyes_open else "Live"
-        }
+        # Blink thresholds
+        CLOSED_THRESH = 0.18  # Eyes considered closed
+        OPEN_THRESH = 0.22    # Eyes considered open
+        
+        has_closed = min_ear < CLOSED_THRESH
+        has_open = max_ear > OPEN_THRESH
+        
+        if has_closed and has_open:
+            # Find best frame (max EAR) to use for recognition
+            best_frame_tuple = max(valid_frames, key=lambda x: x[0])
+            return {
+                "is_live": True, 
+                "reason": "Blink Detected", 
+                "best_image": best_frame_tuple[1]
+            }
+        else:
+            return {
+                "is_live": False, 
+                "reason": f"No Blink Detected. (Min EAR: {min_ear:.2f}, Max EAR: {max_ear:.2f})"
+            }
 
     def train_model(self):
         """Retrains the LBPH model with all faces in data/faces."""
