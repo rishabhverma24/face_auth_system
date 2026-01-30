@@ -1,4 +1,6 @@
 # Face Authentication & Attendance System - Detailed Technical Report
+**Developed by:** Rishabh Verma  
+**Email:** rishabhverma2486@gmail.com
 
 ## 1. Project Overview
 This project is a secure, biometric attendance system that uses Facial Recognition to authenticate users. It is designed to be robust against simple spoofing attacks (like holding up a photo) by implementing **Liveness Detection** via eye-blink analysis.

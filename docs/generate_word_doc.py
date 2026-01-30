@@ -15,6 +15,11 @@ def create_document():
     p = document.add_paragraph('Detailed Technical Report')
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     
+    p = document.add_paragraph('Developed by: Rishabh Verma')
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p = document.add_paragraph('Email: rishabhverma2486@gmail.com')
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
     document.add_page_break()
 
     # 1. Project Overview
